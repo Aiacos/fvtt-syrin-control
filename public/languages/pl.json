@@ -67,6 +67,9 @@
 			"zeroFound": "Brak elementów"
 		},
 		"loading": "Ładowanie...",
-		"createdBy": "Utworzone i zarządzane przez SyrinControl"
+		"createdBy": "Utworzone i zarządzane przez SyrinControl",
+		"errors": {
+			"apiError": "Zapytanie do API Syrinscape \"{api}\" nie powiodło się: {error}"
+		}
 	}
 }

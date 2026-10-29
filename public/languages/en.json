@@ -68,6 +68,9 @@
 			"zeroFound": "No elements found"
 		},
 		"loading": "Loading...",
-		"createdBy": "Created & Managed by SyrinControl"
+		"createdBy": "Created & Managed by SyrinControl",
+		"errors": {
+			"apiError": "Syrinscape API request \"{api}\" failed: {error}"
+		}
 	}
 }

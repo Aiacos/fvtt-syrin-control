@@ -27,6 +27,13 @@ export interface RawApi {
 	getGlobalElements(): Promise<ApiElement[]>;
 }
 
+// Syrinscape throttles bursts of requests (e.g. importing many soundsets) with a `429` that has no CORS headers,
+// so the browser reports it as a CORS failure and the fetch rejects with a `TypeError` instead of a response.
+export const MAX_CONCURRENT_REQUESTS = 2;
+export const RETRY_DELAYS_MS = [5_000, 15_000, 60_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type PlayerJoinedCallback = (name: string) => string | null;
 type UnauthorisedCallback<T> = () => T;
 
@@ -35,6 +42,8 @@ export class RawApiImpl implements RawApi {
 	wasInitialized: boolean = false;
 	playerState: PlayerState = 'inactive';
 	playerJoinedCallback: PlayerJoinedCallback | undefined;
+	activeRequests: number = 0;
+	waitingRequests: (() => void)[] = [];
 	constructor(
 		@inject('FVTTGame')
 		private readonly game: FVTTGame,
@@ -219,12 +228,49 @@ export class RawApiImpl implements RawApi {
 		const headers = new Headers();
 		headers.append('authorization', 'Token ' + authToken);
 
-		return await fetch(`${address}/${url}`, {
-			headers
-		})
+		return await this.limited(() => this.fetchWithRetry(`${address}/${url}`, { headers }))
 			.then(this.handleErr)
 			.then((res) => res.json())
 			.catch(this.catchErr(name));
+	}
+
+	async limited<T>(request: () => Promise<T>): Promise<T> {
+		if (this.activeRequests >= MAX_CONCURRENT_REQUESTS) {
+			// The slot is handed over by the finishing request, so `activeRequests` stays unchanged.
+			await new Promise<void>((resolve) => this.waitingRequests.push(resolve));
+		} else {
+			this.activeRequests++;
+		}
+		try {
+			return await request();
+		} finally {
+			const next = this.waitingRequests.shift();
+			if (next !== undefined) {
+				next();
+			} else {
+				this.activeRequests--;
+			}
+		}
+	}
+
+	async fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+		for (let attempt = 0; ; attempt++) {
+			const canRetry = attempt < RETRY_DELAYS_MS.length;
+			try {
+				const res = await fetch(url, init);
+				if (res.status !== 429 || !canRetry) {
+					return res;
+				}
+				const retryAfter = Number(res.headers.get('retry-after'));
+				await sleep(retryAfter > 0 ? retryAfter * 1000 : RETRY_DELAYS_MS[attempt]);
+			} catch (e) {
+				if (!(e instanceof TypeError) || !canRetry) {
+					throw e;
+				}
+				this.utils.trace('RAW | Request failed, retrying', { url, attempt, e });
+				await sleep(RETRY_DELAYS_MS[attempt]);
+			}
+		}
 	}
 
 	/**
