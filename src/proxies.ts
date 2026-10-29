@@ -17,7 +17,10 @@ function populateContext(ctx: any): Context {
 	return ctx.syrinCtx();
 }
 
-class SyrinAmbientSound extends AmbientSound {
+// V13+ - Canvas placeables live in the `foundry.canvas.placeables` namespace, the global is deprecated.
+const AmbientSoundPlaceable: typeof AmbientSound = (foundry as any).canvas.placeables.AmbientSound;
+
+class SyrinAmbientSound extends AmbientSoundPlaceable {
 	syrin: AmbientSoundController;
 
 	constructor(data: AmbientSoundDocument, context: any) {
@@ -145,8 +148,8 @@ export function createProxies(ctx: Context) {
 	);
 	const PlaylistProxy: typeof Playlist = new Proxy(Playlist, handler(ctx, Playlist, SyrinPlaylist));
 	const AmbientSoundProxy: typeof AmbientSound = new Proxy(
-		AmbientSound,
-		handler(ctx, AmbientSound, SyrinAmbientSound)
+		AmbientSoundPlaceable,
+		handler(ctx, AmbientSoundPlaceable, SyrinAmbientSound)
 	);
 
 	return {

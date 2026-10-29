@@ -1,7 +1,7 @@
 import { Mocked, mocked } from '@/mock';
 import { SocketCalls } from '@/socket';
 import { get } from 'svelte/store';
-import { Syrin } from './syrin';
+import { Syrin, SyrinComponent } from './syrin';
 
 describe('Syrin service', () => {
 	let mock: Mocked;
@@ -9,6 +9,30 @@ describe('Syrin service', () => {
 	beforeEach(() => {
 		mock = mocked();
 		syrin = mock.ctx.syrin;
+	});
+
+	describe('renderComponent', () => {
+		it('mounts each component only once per target', () => {
+			const target = document.createElement('ol');
+			const con = jest.fn();
+
+			syrin.renderComponent(mock.ctx, SyrinComponent.PlayerVolume, con, target);
+			syrin.renderComponent(mock.ctx, SyrinComponent.PlayerVolume, con, target);
+			syrin.renderComponent(mock.ctx, SyrinComponent.GMVolume, con, target);
+
+			expect(con).toBeCalledTimes(2);
+			expect(target).toHaveAttribute('data-syrin-playervolume');
+			expect(target).toHaveAttribute('data-syrin-gmvolume');
+		});
+
+		it('mounts again into a re-rendered target', () => {
+			const con = jest.fn();
+
+			syrin.renderComponent(mock.ctx, SyrinComponent.Playlist, con, document.createElement('ol'));
+			syrin.renderComponent(mock.ctx, SyrinComponent.Playlist, con, document.createElement('ol'));
+
+			expect(con).toBeCalledTimes(2);
+		});
 	});
 
 	describe('stopAll', () => {

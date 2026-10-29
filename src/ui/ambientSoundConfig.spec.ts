@@ -2,7 +2,6 @@ import { mocked, Mocked } from '@/mock';
 import fs from 'fs';
 import path from 'path';
 import { AmbientSoundDetails, onAmbientSoundConfig } from './ambientSoundConfig';
-import jQuery from 'jquery';
 
 describe('Ambient sound config', () => {
 	let mock: Mocked;
@@ -40,7 +39,7 @@ describe('Ambient sound config', () => {
 	});
 
 	it('does nothing when flag is not set', async () => {
-		let window = jQuery('.app');
+		let window = document.querySelector<HTMLElement>('.app')!;
 		details.data.flags = undefined;
 		await onAmbientSoundConfig(mock.ctx, window, details);
 
@@ -48,14 +47,14 @@ describe('Ambient sound config', () => {
 	});
 
 	it('sets padding', async () => {
-		let window = jQuery('.app');
+		let window = document.querySelector<HTMLElement>('.app')!;
 		await onAmbientSoundConfig(mock.ctx, window, details);
 
-		expect(jQuery('.app .window-content').get(0)).toHaveAttribute('style', 'padding: 0;');
+		expect(document.querySelector('.app .window-content')).toHaveAttribute('style', 'padding: 0;');
 	});
 
 	it('renders component', async () => {
-		let window = jQuery('.app');
+		let window = document.querySelector<HTMLElement>('.app')!;
 		await onAmbientSoundConfig(mock.ctx, window, details);
 
 		expect(document.body.innerHTML).toContain('syrin');

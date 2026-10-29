@@ -1,6 +1,7 @@
 import { Context } from '@/services/context';
 import PlaylistConfigComponent from '@/components/config/playlist/index.svelte';
 import { SyrinPlaylistFlags } from '@/sounds/playlist';
+import { prepareConfigForm } from './config';
 
 export interface PlaylistDetails {
 	data: {
@@ -15,19 +16,19 @@ export interface PlaylistDetails {
 }
 export async function onPlaylistConfig(
 	ctx: Context,
-	window: JQuery<Element>,
+	window: HTMLElement,
 	details: PlaylistDetails
 ) {
 	if (details.data.flags?.syrinscape === undefined) {
 		return;
 	}
-	const windowContent = window.find('.window-content');
-	windowContent.attr('style', 'padding: 0;');
-	let form = windowContent.find('form');
-	form.empty();
+	const form = prepareConfigForm(window);
+	if (form === undefined) {
+		return;
+	}
 
 	let component = new PlaylistConfigComponent({
-		target: form.get(0)!,
+		target: form,
 		props: {
 			name: details.data.name,
 			sorting: details.data.sorting,
@@ -36,5 +37,5 @@ export async function onPlaylistConfig(
 		context: ctx.map()
 	});
 
-	ctx.utils.trace('on Playlist config', { details, window, windowContent: form, component });
+	ctx.utils.trace('on Playlist config', { details, window, form, component });
 }

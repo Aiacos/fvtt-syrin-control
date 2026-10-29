@@ -42,42 +42,43 @@ Hooks.once('init', function () {
 
 		Hooks.once('ready', () => {
 			if (ctx.game.isGM()) {
-				new Dialog({
-					title: ctx.game.localize('dependencies.socketlib.title'),
-					content: `<h2>${ctx.game.localize(
-						'dependencies.socketlib.title'
-					)}</h2><p>${ctx.game.localize('dependencies.socketlib.text')}</p>`,
-					buttons: {
-						ok: {
-							icon: '<i class="fas fa-check"></i>',
-							label: ctx.game.localize('dependencies.ok')
-						}
+				(foundry as any).applications.api.DialogV2.prompt({
+					window: { title: ctx.game.localize('dependencies.socketlib.title') },
+					content: `<p>${ctx.game.localize('dependencies.socketlib.text')}</p>`,
+					ok: {
+						icon: 'fas fa-check',
+						label: ctx.game.localize('dependencies.ok')
 					}
-				}).render(true);
+				});
 			}
 		});
 	}
 
-	Hooks.on('renderPlaylistDirectory', async (_: any, html: JQuery<Element>) => {
+	Hooks.on('renderPlaylistDirectory', async (_: any, html: HTMLElement) => {
 		await onPlaylistTab(ctx, html);
 	});
 
-	Hooks.on('getSceneControlButtons', (buttons: any) => {
+	// V13+ - Scene controls are records keyed by name, tools use `onChange` instead of `onClick`.
+	Hooks.on('getSceneControlButtons', (controls: any) => {
 		if (!ctx.game.isGM()) {
 			return;
 		}
 
-		const group = buttons.find((b: any) => b.name === 'sounds');
+		const group = controls.sounds;
+		if (group === undefined) {
+			return;
+		}
 
-		group.tools.push({
-			button: true,
-			icon: 'fas fa-drum',
+		group.tools[MODULE + 'Elements'] = {
 			name: MODULE + 'Elements',
+			order: Object.keys(group.tools).length,
 			title: 'Syrinscape: Elements',
-			onClick: () => {
+			icon: 'fas fa-drum',
+			button: true,
+			onChange: () => {
 				openElements(ctx);
 			}
-		});
+		};
 	});
 
 	// Hooks.on(MODULE + 'soundsetChange', async function (soundsetId: number): Promise<void> {
@@ -96,28 +97,20 @@ Hooks.once('init', function () {
 		ctx.stores.nextPlaylistMood.set(moodId);
 	});
 
-	Hooks.on('renderSettingsConfig', async (_: any, init: any) => {
-		await onSettings(init);
+	Hooks.on('renderSettingsConfig', async (_: any, html: HTMLElement) => {
+		await onSettings(html);
 	});
 
-	Hooks.on('renderPlaylistConfig', async (_: any, node: JQuery<Element>, details: any) => {
-		await onPlaylistConfig(ctx, node, details);
+	// V13+ - Document sheets are ApplicationV2, the data comes from the sheet document.
+	Hooks.on('renderPlaylistConfig', async (app: any, html: HTMLElement) => {
+		await onPlaylistConfig(ctx, html, { data: app.document });
 	});
-	Hooks.on('renderPlaylistSoundConfig', async (_: any, node: JQuery<Element>, details: any) => {
-		await onPlaylistSoundConfig(ctx, node, details);
+	Hooks.on('renderPlaylistSoundConfig', async (app: any, html: HTMLElement) => {
+		await onPlaylistSoundConfig(ctx, html, { data: app.document });
 	});
-	Hooks.on(
-		'renderAmbientSoundConfig',
-		async (ambientSoundConfig: AmbientSoundConfig, node: JQuery<Element>, details: any) => {
-			if (details === undefined) {
-				// V12 Compatibility
-				details = { data: ambientSoundConfig.document };
-				node = $(node);
-			}
-
-			await onAmbientSoundConfig(ctx, node, details);
-		}
-	);
+	Hooks.on('renderAmbientSoundConfig', async (app: any, html: HTMLElement) => {
+		await onAmbientSoundConfig(ctx, html, { data: app.document });
+	});
 
 	Hooks.on('closeSettingsConfig', async () => {
 		if (!ctx.game.isGM()) {
@@ -130,30 +123,32 @@ Hooks.once('init', function () {
 		const socketPromise = setupSocket(ctx);
 		await socketPromise;
 
-		let canvas = (game as any).canvas;
-		// Monkeypatching the drop data method
-		// Because flags are not passed into the ambient sound
-		async function onDropData(event: any, data: any) {
-			const playlistSound = await (PlaylistSound.implementation as any).fromDropData(data);
-			if (!playlistSound) return false;
+		// Patching the drop data method, because flags are not passed into the ambient sound.
+		// Instead of copying Foundry's implementation, the preview data is enriched with the playlist sound flags.
+		const SoundsLayer = (foundry as any).canvas.layers.SoundsLayer;
+		const originalOnDropData = SoundsLayer.prototype._onDropData;
+		SoundsLayer.prototype._onDropData = async function (event: DragEvent, data: any) {
+			const playlistSound =
+				data?.type === 'PlaylistSound'
+					? await (PlaylistSound.implementation as any).fromDropData(data)
+					: undefined;
+			if (playlistSound?.flags?.syrinscape === undefined) {
+				return originalOnDropData.call(this, event, data);
+			}
 
-			// Get the world-transformed drop position.
-			const coords = canvas.sounds._canvasCoordinatesFromDrop(event);
-			if (!coords) return false;
-			const soundData = {
-				path: playlistSound.path,
-				volume: playlistSound.volume,
-				flags: playlistSound.flags, // <- This is added by the module, the rest is just copy-paste from foundry.js
-				x: coords[0],
-				y: coords[1],
-				radius: canvas.dimensions.distance * 2
-			};
-			return canvas.sounds._createPreview(soundData, {
-				top: event.clientY - 20,
-				left: event.clientX + 40
-			});
-		}
-		canvas.sounds._onDropData = onDropData;
+			const originalCreatePreview = this._createPreview;
+			this._createPreview = (soundData: any, options: any) =>
+				originalCreatePreview.call(
+					this,
+					{ ...soundData, flags: playlistSound.toObject().flags },
+					options
+				);
+			try {
+				return await originalOnDropData.call(this, event, data);
+			} finally {
+				delete this._createPreview;
+			}
+		};
 
 		ctx.stores.nextMood.subscribe((next) => {
 			ctx.utils.trace('Subscribe | next mood: ', next);

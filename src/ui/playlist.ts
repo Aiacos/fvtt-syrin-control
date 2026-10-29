@@ -5,60 +5,76 @@ import { Context } from '@/services/context';
 import { openImporter } from '@/ui/importer';
 import { SyrinComponent } from '@/services/syrin';
 
-export async function onPlaylistTab(ctx: Context, $tab: JQuery<Element>) {
-	let volumeTarget = $tab.find('.playlist-sounds');
+// V13+ - Playlist actions are camelCase (`playlistPlay`), V12 used kebab-case (`playlist-play`).
+const actionsToRemove = [
+	'playlistMode',
+	'playlistPlay',
+	'playlistBackward',
+	'playlistForward',
+	'soundCreate',
+	'soundRepeat'
+];
 
-	ctx.syrin.renderComponent(
-		ctx,
-		SyrinComponent.PlayerVolume,
-		PlayerVolumeComponent,
-		volumeTarget.get(0)!
-	);
+/**
+ * The PlaylistDirectory is an ApplicationV2 rendered in parts (`header`, `controls`, `directory`, `playing`, `footer`).
+ * The hook is called for every (partial) render, so every injection here has to be idempotent.
+ */
+export async function onPlaylistTab(ctx: Context, tab: HTMLElement) {
+	const controls = tab.querySelector('[data-application-part="controls"]');
+	const volumeTarget =
+		controls?.querySelector('ol, ul') ?? controls ?? tab.querySelector('.playlist-sounds');
+
+	if (volumeTarget !== null) {
+		ctx.syrin.renderComponent(
+			ctx,
+			SyrinComponent.PlayerVolume,
+			PlayerVolumeComponent,
+			volumeTarget
+		);
+	}
 
 	if (!ctx.game.isGM()) {
 		return;
 	}
 
-	ctx.syrin.renderComponent(ctx, SyrinComponent.GMVolume, GMVolumeComponent, volumeTarget.get(0)!);
+	if (volumeTarget !== null) {
+		ctx.syrin.renderComponent(ctx, SyrinComponent.GMVolume, GMVolumeComponent, volumeTarget);
+	}
 
-	let target = $tab.find('.directory-list');
+	const target = tab.querySelector('.directory-list');
+	if (target === null) {
+		return;
+	}
 
-	// ctx.utils.trace('On Playlist Tab', { $tab });
+	ctx.syrin.renderComponent(ctx, SyrinComponent.Playlist, PlaylistComponent, target);
 
-	ctx.syrin.renderComponent(ctx, SyrinComponent.Playlist, PlaylistComponent, target.get(0)!);
-
-	const buttonsTarget = $tab.find('.action-buttons');
-	const importButton = $(`<button class="import-syrinscape" data-test="syrin-import-btn">\
-		<i class="fas fa-file-import"></i>\
-		${ctx.game.localize('playlist.importSoundsets')}\
-		</button>\
-		`);
-
-	importButton.on('click', () => {
-		openImporter(ctx);
-	});
-
-	buttonsTarget.append(importButton);
+	const buttonsTarget = tab.querySelector('.header-actions, .action-buttons');
+	if (buttonsTarget !== null && buttonsTarget.querySelector('.import-syrinscape') === null) {
+		const importButton = document.createElement('button');
+		importButton.type = 'button';
+		importButton.className = 'import-syrinscape';
+		importButton.dataset.test = 'syrin-import-btn';
+		importButton.innerHTML = `<i class="fas fa-file-import"></i> ${ctx.game.localize(
+			'playlist.importSoundsets'
+		)}`;
+		importButton.addEventListener('click', () => {
+			openImporter(ctx);
+		});
+		buttonsTarget.append(importButton);
+	}
 
 	const playlists = ctx.game.getPlaylists();
 
-	for (let item of target.find('.directory-item')) {
-		const playlist = playlists?.get(item.getAttribute('data-document-id')!) as any;
+	for (const item of Array.from(target.querySelectorAll<HTMLElement>('.directory-item'))) {
+		const id = item.dataset.entryId ?? item.dataset.documentId;
+		const playlist = id === undefined ? undefined : (playlists?.get(id) as any);
 		if (playlist?.flags?.syrinscape === undefined) {
 			continue;
 		}
 
 		ctx.utils.trace('Item', { item, playlist });
-		const actionsToRemove = [
-			'playlist-mode',
-			'playlist-play',
-			'playlist-backward',
-			'playlist-forward',
-			'sound-create',
-			'sound-repeat'
-		];
-		for (let action of actionsToRemove) {
-			$(item).find(`[data-action="${action}"]`).remove();
+		for (const action of actionsToRemove) {
+			item.querySelectorAll(`[data-action="${action}"]`).forEach((el: Element) => el.remove());
 		}
 	}
 }

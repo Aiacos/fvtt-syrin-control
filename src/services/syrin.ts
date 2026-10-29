@@ -24,7 +24,15 @@ export class Syrin {
 		private readonly stores: Stores
 	) {}
 
-	renderComponent(ctx: Context, _name: SyrinComponent, con: ConstructorOf<any>, target: Element) {
+	renderComponent(ctx: Context, name: SyrinComponent, con: ConstructorOf<any>, target: Element) {
+		// V13+ - The PlaylistDirectory hook fires on every partial render, but parts that are not re-rendered
+		// keep their DOM (and the component mounted in it). A re-rendered part is a new element without the marker.
+		const marker = 'data-syrin-' + SyrinComponent[name].toLowerCase();
+		if (target.hasAttribute(marker)) {
+			return;
+		}
+		target.setAttribute(marker, '');
+
 		new con({
 			target,
 			context: ctx.map()

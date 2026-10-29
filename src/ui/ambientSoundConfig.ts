@@ -1,5 +1,6 @@
 import { Context } from '@/services/context';
 import AmbientSoundConfigComponent from '@/components/config/ambient-sound/index.svelte';
+import { prepareConfigForm } from './config';
 
 export interface AmbientSoundDetails {
 	data: {
@@ -18,22 +19,20 @@ export interface AmbientSoundDetails {
 
 export async function onAmbientSoundConfig(
 	ctx: Context,
-	window: JQuery<Element>,
+	window: HTMLElement,
 	details: AmbientSoundDetails
 ) {
 	if (details.data.flags?.syrinscape === undefined) {
 		return;
 	}
 
-	const windowContent = window.find('.window-content');
-	windowContent.attr('style', 'padding: 0;');
-
-	// Changed structure in V12 - Root window is the entire form, window content needs to be replaced.
-	let form = window.is('form') ? windowContent : windowContent.find('form');
-	form.empty();
+	const form = prepareConfigForm(window);
+	if (form === undefined) {
+		return;
+	}
 
 	let component = new AmbientSoundConfigComponent({
-		target: form.get(0)!,
+		target: form,
 		props: {
 			x: details.data.x,
 			y: details.data.y,
@@ -46,5 +45,5 @@ export async function onAmbientSoundConfig(
 		context: ctx.map()
 	});
 
-	ctx.utils.trace('on AmbientSound config', { details, window, windowContent, component });
+	ctx.utils.trace('on AmbientSound config', { details, window, form, component });
 }

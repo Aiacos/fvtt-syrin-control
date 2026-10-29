@@ -1,6 +1,7 @@
-export async function onSettings(window: JQuery<Element>) {
-	const syrinTab = window.find('.tab.category[data-category="fvtt-syrin-control"]');
-	const authTokenField = syrinTab.find('[name="fvtt-syrin-control.authToken"]');
+export async function onSettings(window: HTMLElement) {
+	const authTokenField = window.querySelector<HTMLInputElement>(
+		'input[name="fvtt-syrin-control.authToken"]'
+	);
 
-	authTokenField.attr('type', 'password');
+	authTokenField?.setAttribute('type', 'password');
 }

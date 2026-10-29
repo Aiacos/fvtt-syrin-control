@@ -1,6 +1,7 @@
 import { Context } from '@/services/context';
 import PlaylistSoundConfigComponent from '@/components/config/playlist-sound/index.svelte';
 import { SyrinPlaylistSoundFlags } from '@/sounds/playlist-sound';
+import { prepareConfigForm } from './config';
 
 export interface PlaylistSoundDetails {
 	data: {
@@ -15,20 +16,20 @@ export interface PlaylistSoundDetails {
 
 export async function onPlaylistSoundConfig(
 	ctx: Context,
-	window: JQuery<Element>,
+	window: HTMLElement,
 	details: PlaylistSoundDetails
 ) {
 	if (details.data.flags?.syrinscape?.type !== 'mood') {
 		return;
 	}
 
-	const windowContent = window.find('.window-content');
-	windowContent.attr('style', 'padding: 0;');
-	let form = windowContent.find('form');
-	form.empty();
+	const form = prepareConfigForm(window);
+	if (form === undefined) {
+		return;
+	}
 
 	let component = new PlaylistSoundConfigComponent({
-		target: form.get(0)!,
+		target: form,
 		props: {
 			name: details.data.name,
 			moodId: details.data.flags.syrinscape.mood
@@ -36,5 +37,5 @@ export async function onPlaylistSoundConfig(
 		context: ctx.map()
 	});
 
-	ctx.utils.trace('on PlaylistSound config', { details, window, windowContent, component });
+	ctx.utils.trace('on PlaylistSound config', { details, window, form, component });
 }

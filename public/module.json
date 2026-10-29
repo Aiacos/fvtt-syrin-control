@@ -10,9 +10,8 @@
 	],
 	"version": "0.1.0",
 	"compatibility": {
-		"minimum": 10,
-		"verified": "12",
-		"maximum": "12"
+		"minimum": "13",
+		"verified": "14"
 	},
 	"library": false,
 	"esmodules": ["index.js"],
@@ -40,9 +39,9 @@
 			{
 				"id": "socketlib",
 				"type": "module",
-				"manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/v1.0.12/module.json",
-				"compability": {
-					"verified": "1.0.12"
+				"manifest": "https://github.com/farling42/foundryvtt-socketlib/releases/latest/download/module.json",
+				"compatibility": {
+					"minimum": "1.1.0"
 				}
 			}
 		]
