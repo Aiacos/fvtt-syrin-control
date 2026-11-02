@@ -28,7 +28,7 @@
 	let soundsetName: string = '...';
 	let ambientName: string = '...';
 	let style = '';
-	let class_ = 'inner';
+	let class_ = 'inner syrin-config';
 
 	const reactiveAmbientSoundName = async (flags: SyrinAmbientSoundFlags, soundsets: Soundsets) => {
 		if (flags.type === 'mood') {
@@ -45,8 +45,8 @@
 			ambientName = mood.name;
 			soundsetName = soundset.name;
 			if (soundset.artworkUrl !== undefined) {
-				style = `background-image: url('${soundset.artworkUrl}');`;
-				class_ = 'inner inner-invert';
+				style = `background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url('${soundset.artworkUrl}');`;
+				class_ = 'inner syrin-config syrin-cover';
 			}
 		}
 	};
@@ -86,8 +86,8 @@
 		</div>
 		<div class="form-group">
 			<label for=""
-				>{ctx.game.localizeCore('XCoord')}
-				<span class="units">({ctx.game.localizeCore('Pixels')})</span></label
+				>{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.x.label')}
+				<span class="units">({ctx.game.localizeCore('MEASUREMENT.Pixels')})</span></label
 			>
 			<div class="form-fields">
 				<input type="number" data-test="syrin-x" name="x" step="1" bind:value={x} />
@@ -95,8 +95,8 @@
 		</div>
 		<div class="form-group">
 			<label for=""
-				>{ctx.game.localizeCore('YCoord')}
-				<span class="units">({ctx.game.localizeCore('Pixels')})</span></label
+				>{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.y.label')}
+				<span class="units">({ctx.game.localizeCore('MEASUREMENT.Pixels')})</span></label
 			>
 			<div class="form-fields">
 				<input type="number" data-test="syrin-y" name="y" step="1" bind:value={y} />
@@ -124,7 +124,9 @@
 		<div class="form-group">
 			<label for="">{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.darkness.label')}</label>
 			<div class="form-fields">
-				<label for="darkness.min">{ctx.game.localizeCore('Between')}</label>
+				<label for="darkness.min"
+					>{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.darkness.min.label')}</label
+				>
 				<input
 					type="number"
 					data-test="syrin-darkness-min"
@@ -135,7 +137,9 @@
 					step="any"
 					placeholder="0"
 				/>
-				<label for="darkness.max">{ctx.game.localizeCore('and')}</label>
+				<label for="darkness.max"
+					>{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.darkness.max.label')}</label
+				>
 				<input
 					type="number"
 					data-test="syrin-darkness-max"
@@ -185,22 +189,5 @@
 <style>
 	div {
 		padding: 2px;
-	}
-
-	.inner {
-		padding: 8px;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		height: 100%;
-	}
-	.inner-invert {
-		color: var(--color-text-light-highlight);
-		background-size: cover;
-	}
-	.inner-invert .notes,
-	.inner-invert .hint,
-	.inner-invert .units {
-		color: var(--color-text-light-highlight);
 	}
 </style>

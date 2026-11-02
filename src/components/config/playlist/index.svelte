@@ -12,7 +12,7 @@
 	let soundsets = ctx.stores.soundsets;
 	let soundsetName = '...';
 	let style = '';
-	let class_ = 'inner';
+	let class_ = 'inner syrin-config';
 
 	const reactiveSoundsetName = async (soundsetId: string, soundsets: Soundsets) => {
 		let soundset = soundsets[soundsetId];
@@ -21,8 +21,8 @@
 		}
 		soundsetName = soundset.name;
 		if (soundset.artworkUrl !== undefined) {
-			style = `background-image: url('${soundset.artworkUrl}');`;
-			class_ = 'inner inner-invert';
+			style = `background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url('${soundset.artworkUrl}');`;
+			class_ = 'inner syrin-config syrin-cover';
 		}
 	};
 
@@ -32,12 +32,12 @@
 <div class={class_} {style} data-test="syrin-playlist-config">
 	<div>
 		<div class="form-group">
-			<label for="">{ctx.game.localizeCore('PLAYLIST.Name')}</label>
+			<label for="">{ctx.game.localizeCore('PLAYLIST.FIELDS.name.label')}</label>
 			<input
 				type="text"
 				name="name"
 				data-test="syrin-playlist-name"
-				placeholder={ctx.game.localizeCore('PLAYLIST.Name')}
+				placeholder={ctx.game.localizeCore('PLAYLIST.FIELDS.name.label')}
 				bind:value={name}
 			/>
 		</div>
@@ -52,7 +52,7 @@
 			/>
 		</div>
 		<div class="form-group">
-			<label for="">{ctx.game.localizeCore('PLAYLIST.SortMode')}</label>
+			<label for="">{ctx.game.localizeCore('PLAYLIST.FIELDS.sorting.label')}</label>
 			<select name="sorting" data-test="syrin-sort-mode" bind:value={sorting}>
 				<option value="a">{ctx.game.localizeCore('PLAYLIST.SortAlphabetical')}</option>
 				<option value="m">{ctx.game.localizeCore('PLAYLIST.SortManual')}</option>
@@ -69,22 +69,3 @@
 		</button>
 	</div>
 </div>
-
-<style>
-	.inner-invert {
-		color: var(--color-text-light-highlight);
-		background-size: cover;
-	}
-	.inner {
-		padding: 8px;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		height: 100%;
-	}
-	.inner button,
-	.inner input,
-	.inner select {
-		background: url(/ui/parchment.jpg) repeat;
-	}
-</style>

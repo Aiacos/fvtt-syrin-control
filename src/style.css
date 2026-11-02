@@ -3,3 +3,34 @@
 	min-height: 0;
 	overflow: hidden;
 }
+
+/* V13+ - Separates the Syrinscape rows from the core volume controls in the playlist directory. */
+li:not(.syrin-volume) + li.syrin-volume {
+	border-top: 1px solid var(--color-border, currentColor);
+	margin-top: 4px;
+	padding-top: 4px;
+}
+
+/* Config forms of Syrinscape playlists, sounds and ambient sounds - the soundset artwork is the background. */
+.syrin-config {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 8px;
+	height: 100%;
+	padding: 8px;
+}
+.syrin-config.syrin-cover {
+	min-height: 200px;
+	background-size: cover;
+	background-position: center;
+	color: #f0f0e0;
+	text-shadow: 0 1px 2px #000;
+}
+.syrin-config.syrin-cover :is(label, .notes, .hint, .units) {
+	color: inherit;
+}
+.syrin-config button[type='submit'] {
+	width: 100%;
+	margin-top: 4px;
+}

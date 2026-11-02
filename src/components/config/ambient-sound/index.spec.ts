@@ -216,8 +216,11 @@ describe('Ambient Sound Config', () => {
 		await waitFor(() => {
 			const el = screen.queryByTestId('syrin-ambient-sound-config');
 			expect(el).toHaveClass('inner');
-			expect(el).toHaveClass('inner-invert');
-			expect(el).toHaveAttribute('style', "background-image: url('http://localhost/image');");
+			expect(el).toHaveClass('syrin-cover');
+			expect(el).toHaveAttribute(
+				'style',
+				"background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url('http://localhost/image');"
+			);
 			expect(el).toBeVisible();
 		});
 	});
@@ -248,8 +251,11 @@ describe('Ambient Sound Config', () => {
 		await waitFor(() => {
 			const el = screen.queryByTestId('syrin-ambient-sound-config');
 			expect(el).toHaveClass('inner');
-			expect(el).not.toHaveClass('inner-invert');
-			expect(el).not.toHaveAttribute('style', "background-image: url('http://localhost/image');");
+			expect(el).not.toHaveClass('syrin-cover');
+			expect(el).not.toHaveAttribute(
+				'style',
+				"background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url('http://localhost/image');"
+			);
 			expect(el).toBeVisible();
 		});
 	});

@@ -3,19 +3,25 @@
 	export let volume: number;
 	export let title: string;
 	export let name: string;
+
+	// V13+ - Same markup as the core volume rows in the playlist directory, so it inherits their styling.
+	function onChange(event: Event) {
+		volume = Number((event.currentTarget as HTMLInputElement).value);
+	}
 </script>
 
-<li class="sound flexrow">
-	<h4 class="sound-name" draggable="true">{title}</h4>
-	<i class="volume-icon fas fa-volume-down" />
-	<input
+<li class="flexrow syrin-volume">
+	<label for="">{title}</label>
+	<i class="volume-icon fa-fw fa-solid fa-volume-low" inert />
+	<range-picker
 		class="global-volume-slider"
 		{name}
-		type="range"
 		min="0"
 		max="100"
-		step="0.05"
-		bind:value={volume}
+		step="1"
+		value={volume}
+		aria-label={title}
+		on:change={onChange}
 		on:change
 	/>
 </li>

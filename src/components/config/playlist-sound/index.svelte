@@ -13,7 +13,7 @@
 	let soundsetName: string = '...';
 	let moodName: string = '...';
 	let style = '';
-	let class_ = 'inner';
+	let class_ = 'inner syrin-config';
 	$: hashedPath = hashPath('mood', moodId);
 
 	const reactiveSoundsetName = async (moodId: number, soundsets: Soundsets) => {
@@ -30,8 +30,8 @@
 		moodName = mood.name;
 		soundsetName = soundset.name;
 		if (soundset.artworkUrl !== undefined) {
-			style = `background-image: url('${soundset.artworkUrl}');`;
-			class_ = 'inner inner-invert';
+			style = `background-image: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), url('${soundset.artworkUrl}');`;
+			class_ = 'inner syrin-config syrin-cover';
 		}
 	};
 
@@ -41,12 +41,12 @@
 <div class={class_} {style} data-test="syrin-playlist-sound-config">
 	<div>
 		<div class="form-group">
-			<label for="">{ctx.game.localizeCore('PLAYLIST.SoundName')}</label>
+			<label for="">{ctx.game.localizeCore('PLAYLIST_SOUND.FIELDS.name.label')}</label>
 			<input
 				type="text"
 				name="name"
 				data-test="syrin-sound-name"
-				placeholder={ctx.game.localizeCore('PLAYLIST.SoundName')}
+				placeholder={ctx.game.localizeCore('PLAYLIST_SOUND.FIELDS.name.label')}
 				bind:value={name}
 				required
 			/>
@@ -75,25 +75,7 @@
 		</div>
 		<button type="submit">
 			<i class="far fa-save" />
-			{ctx.game.localizeCore('PLAYLIST.SoundUpdate')}
+			{ctx.game.localizeCore('PLAYLIST_SOUND.Update')}
 		</button>
 	</div>
 </div>
-
-<style>
-	.inner {
-		padding: 8px;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		height: 100%;
-	}
-	.inner-invert {
-		color: var(--color-text-light-highlight);
-		background-size: cover;
-	}
-	.inner button,
-	.inner input {
-		background: url(/ui/parchment.jpg) repeat;
-	}
-</style>

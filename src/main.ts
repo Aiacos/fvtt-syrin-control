@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import 'syrinscape';
+import './style.css';
 import { container } from 'tsyringe';
 import { initSettings, onCloseSettings } from './settings';
 
