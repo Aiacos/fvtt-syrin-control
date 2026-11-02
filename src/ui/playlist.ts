@@ -16,13 +16,29 @@ const actionsToRemove = [
 ];
 
 /**
+ * The container of the core volume rows (Music, Environment, Interface), whatever markup the core version uses:
+ * the closest ancestor holding the first two volume sliders.
+ */
+function findVolumeRows(controls: Element): Element | null {
+	const sliders = controls.querySelectorAll('range-picker');
+	if (sliders.length < 2) {
+		return controls.querySelector('ol, ul');
+	}
+	let container = sliders[0].parentElement;
+	while (container !== null && !container.contains(sliders[1])) {
+		container = container.parentElement;
+	}
+	return container;
+}
+
+/**
  * The PlaylistDirectory is an ApplicationV2 rendered in parts (`header`, `controls`, `directory`, `playing`, `footer`).
  * The hook is called for every (partial) render, so every injection here has to be idempotent.
  */
 export async function onPlaylistTab(ctx: Context, tab: HTMLElement) {
 	const controls = tab.querySelector('[data-application-part="controls"]');
 	const volumeTarget =
-		controls?.querySelector('ol, ul') ?? controls ?? tab.querySelector('.playlist-sounds');
+		(controls && findVolumeRows(controls)) ?? controls ?? tab.querySelector('.playlist-sounds');
 
 	if (volumeTarget !== null) {
 		ctx.syrin.renderComponent(

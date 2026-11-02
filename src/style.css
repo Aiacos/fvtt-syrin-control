@@ -5,7 +5,7 @@
 }
 
 /* V13+ - Separates the Syrinscape rows from the core volume controls in the playlist directory. */
-li:not(.syrin-volume) + li.syrin-volume {
+:not(.syrin-volume) + .syrin-volume {
 	border-top: 1px solid var(--color-border, currentColor);
 	margin-top: 4px;
 	padding-top: 4px;
