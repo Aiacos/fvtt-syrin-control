@@ -94,8 +94,7 @@ export interface Mocked {
 	raw: RawApi;
 }
 
-export function mocked(): Mocked {
-	const game = mockedGame();
+export function mocked(game: FVTTGame = mockedGame()): Mocked {
 	const raw = mockedApi();
 	const utils = new Utils(game);
 	const api = new Api(raw);

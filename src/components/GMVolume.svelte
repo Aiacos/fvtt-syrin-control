@@ -9,24 +9,26 @@
 	let globalVolume = ctx.stores.globalVolume;
 	let oneshotsVolume = ctx.stores.oneshotsVolume;
 
-	// Event handlers
-	function onGlobalVolumeChange() {
-		ctx.api.changeMoodVolume($globalVolume * 0.01);
+	// Event handlers - the stores and settings are on a 0-100 scale, Syrinscape on 0-1.
+	function onGlobalVolumeChange(event: CustomEvent<number>) {
+		globalVolume.set(event.detail);
+		ctx.api.changeMoodVolume(event.detail / 100);
 	}
-	function onOneshotsVolumeChange() {
-		ctx.api.changeOneShotVolume($oneshotsVolume * 0.01);
+	function onOneshotsVolumeChange(event: CustomEvent<number>) {
+		oneshotsVolume.set(event.detail);
+		ctx.api.changeOneShotVolume(event.detail / 100);
 	}
 </script>
 
 <VolumeSlider
 	name="syrinscapeGlobalVolume"
 	title={ctx.game.localize('playlist.globalVolume')}
-	bind:volume={$globalVolume}
+	volume={$globalVolume}
 	on:change={onGlobalVolumeChange}
 />
 <VolumeSlider
 	name="oneShotsVolume"
 	title={ctx.game.localize('playlist.oneShotsVolume')}
-	bind:volume={$oneshotsVolume}
+	volume={$oneshotsVolume}
 	on:change={onOneshotsVolumeChange}
 />

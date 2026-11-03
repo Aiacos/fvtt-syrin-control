@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { configure } from '@testing-library/svelte';
+import { FakeRangePicker } from './jest/range-picker';
 
 Object.defineProperty(global, 'Hooks', {
 	value: {
@@ -12,6 +13,11 @@ Object.defineProperty(global, 'Hooks', {
 
 Object.defineProperty(global, 'foundry', {
 	value: {
+		applications: {
+			elements: {
+				HTMLRangePickerElement: FakeRangePicker
+			}
+		},
 		utils: {
 			flattenObject: (obj: any, _d: number = 0) => {
 				return flattenObject(obj, _d);

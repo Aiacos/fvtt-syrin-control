@@ -34,9 +34,10 @@ interface StoreDefaults {
 export const storeDefaults: StoreDefaults = {
 	elements: [],
 	soundsets: {},
-	playerVolume: 0.5,
-	globalVolume: 0.5,
-	oneshotsVolume: 0.5
+	// Placeholders until `ready`: on the 0-100 scale of the registered settings (see settings.ts).
+	playerVolume: 50,
+	globalVolume: 50,
+	oneshotsVolume: 50
 };
 
 @singleton()

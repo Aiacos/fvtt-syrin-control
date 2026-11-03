@@ -39,6 +39,23 @@ export class Syrin {
 		});
 	}
 
+	/**
+	 * Applies the saved volumes (0-100 settings) to the Syrinscape player (0-1), which otherwise starts at its own
+	 * volumes. To be called once the player is active. The global and one-shot volumes belong to the Syrinscape
+	 * session shared by everyone, so only the GM sets them.
+	 */
+	applyVolumes() {
+		const toPlayer = (volume: number) =>
+			Number.isFinite(volume) ? Math.min(Math.max(volume / 100, 0), 1) : 0.5;
+
+		this.api.changePlayerVolume(toPlayer(this.stores.playerVolume.get()));
+		if (!this.game.isGM()) {
+			return;
+		}
+		this.api.changeMoodVolume(toPlayer(this.stores.globalVolume.get()));
+		this.api.changeOneShotVolume(toPlayer(this.stores.oneshotsVolume.get()));
+	}
+
 	stopAll() {
 		if (!this.game.isGM()) {
 			this.game.socket!.executeAsGM(SocketCalls.StopAll);

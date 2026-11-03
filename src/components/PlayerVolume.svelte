@@ -8,15 +8,16 @@
 	// Params & State
 	let volume = ctx.stores.playerVolume;
 
-	// Event handlers
-	function onVolumeChange() {
-		ctx.api.changePlayerVolume($volume * 0.01);
+	// Event handlers - the store and setting are on a 0-100 scale, Syrinscape on 0-1.
+	function onVolumeChange(event: CustomEvent<number>) {
+		volume.set(event.detail);
+		ctx.api.changePlayerVolume(event.detail / 100);
 	}
 </script>
 
 <VolumeSlider
 	name="globalSyrinscapeVolume"
 	title="Syrinscape"
-	bind:volume={$volume}
+	volume={$volume}
 	on:change={onVolumeChange}
 />

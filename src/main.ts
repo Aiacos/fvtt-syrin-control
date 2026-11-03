@@ -55,6 +55,11 @@ Hooks.once('init', function () {
 		});
 	}
 
+	// The Syrinscape player starts at its own volumes (the local one at the maximum): apply the saved ones.
+	Hooks.on(MODULE + 'playerActive', () => {
+		ctx.syrin.applyVolumes();
+	});
+
 	Hooks.on('renderPlaylistDirectory', async (_: any, html: HTMLElement) => {
 		await onPlaylistTab(ctx, html);
 	});

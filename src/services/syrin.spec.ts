@@ -234,4 +234,55 @@ describe('Syrin service', () => {
 			expect(mock.game.socket?.executeAsGM).not.toBeCalled();
 		});
 	});
+
+	// The Syrinscape player starts at its own volumes (the local one at 1, the maximum): the saved ones
+	// (0-100 settings) have to be applied once the player is active.
+	describe('applyVolumes', () => {
+		const saved: Record<string, number> = {
+			playerVolume: 73,
+			globalVolume: 40,
+			oneshotsVolume: 25
+		};
+		beforeEach(() => {
+			mock.game.getSetting = jest.fn((name: string) => saved[name]) as any;
+			mock.ctx.stores.playerVolume.refresh();
+			mock.ctx.stores.globalVolume.refresh();
+			mock.ctx.stores.oneshotsVolume.refresh();
+		});
+
+		it('applies only the local volume when its not GM', () => {
+			mock.game.isGM = jest.fn(() => false);
+
+			syrin.applyVolumes();
+
+			expect(mock.raw.changePlayerVolume).toBeCalledTimes(1);
+			expect(mock.raw.changePlayerVolume).toBeCalledWith(0.73);
+			expect(mock.raw.changeMoodVolume).not.toBeCalled();
+			expect(mock.raw.changeOneShotVolume).not.toBeCalled();
+		});
+
+		it('applies the local volume and the session volumes when its GM', () => {
+			mock.game.isGM = jest.fn(() => true);
+
+			syrin.applyVolumes();
+
+			expect(mock.raw.changePlayerVolume).toBeCalledWith(0.73);
+			expect(mock.raw.changeMoodVolume).toBeCalledWith(0.4);
+			expect(mock.raw.changeOneShotVolume).toBeCalledWith(0.25);
+		});
+
+		it('keeps the volumes in the 0-1 range of Syrinscape', () => {
+			mock.game.isGM = jest.fn(() => true);
+			Object.assign(saved, { playerVolume: 150, globalVolume: -5, oneshotsVolume: NaN });
+			mock.ctx.stores.playerVolume.refresh();
+			mock.ctx.stores.globalVolume.refresh();
+			mock.ctx.stores.oneshotsVolume.refresh();
+
+			syrin.applyVolumes();
+
+			expect(mock.raw.changePlayerVolume).toBeCalledWith(1);
+			expect(mock.raw.changeMoodVolume).toBeCalledWith(0);
+			expect(mock.raw.changeOneShotVolume).toBeCalledWith(0.5);
+		});
+	});
 });

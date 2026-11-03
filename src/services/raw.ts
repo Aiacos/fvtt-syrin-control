@@ -126,6 +126,8 @@ export class RawApiImpl implements RawApi {
 				async onActive() {
 					// utils.trace("RAW Headless | Syrinscape | On Active", { syrinscape });
 					raw.playerState = 'active';
+					// The audio system and the session socket exist only from here on (not yet in `configure`).
+					game.callHookAll('playerActive');
 					// const gainNode = audioContext.createGain();
 					// syrinscape.events.startElement.addListener((event) => {
 					// 	utils.warn("RAW Headless | Syrinscape | On Element Start", { event });
