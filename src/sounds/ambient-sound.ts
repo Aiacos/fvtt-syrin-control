@@ -44,7 +44,10 @@ export class AmbientSound {
 
 		// The local fade follows this client's own tokens, so it does not need the GM.
 		if (this.flags.type === 'mood') {
-			ctx.syrin.setLocalAmbient(key, audible ? { moodId: this.flags.mood, volume: rounded } : undefined);
+			ctx.syrin.setLocalAmbient(
+				key,
+				audible ? { moodId: this.flags.mood, volume: rounded } : undefined
+			);
 		}
 
 		if (!ctx.api.isPlayerActive()) {
