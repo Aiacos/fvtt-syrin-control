@@ -38,6 +38,8 @@ describe('Ambient Sound Config', () => {
 				y: 200,
 				radius: 10,
 				walls: true,
+				volume: 0.8,
+				easing: false,
 				darkness: {
 					min: 0,
 					max: 1
@@ -80,6 +82,14 @@ describe('Ambient Sound Config', () => {
 			const walls = screen.queryByTestId('syrin-walls');
 			expect(walls).toBeChecked();
 			expect(walls).toBeVisible();
+
+			const volume = screen.queryByTestId('syrin-volume');
+			expect(volume).toHaveValue('0.8');
+			expect(volume).toBeVisible();
+
+			const easing = screen.queryByTestId('syrin-easing');
+			expect(easing).not.toBeChecked();
+			expect(easing).toBeVisible();
 
 			const darknessMin = screen.queryByTestId('syrin-darkness-min');
 			expect(darknessMin).toHaveValue(0);
@@ -161,6 +171,10 @@ describe('Ambient Sound Config', () => {
 			const walls = screen.queryByTestId('syrin-walls');
 			expect(walls).toBeChecked();
 			expect(walls).toBeVisible();
+
+			// Foundry's defaults when the document has none: the fade by distance at half volume
+			expect(screen.queryByTestId('syrin-volume')).toHaveValue('0.5');
+			expect(screen.queryByTestId('syrin-easing')).toBeChecked();
 
 			const darknessMin = screen.queryByTestId('syrin-darkness-min');
 			expect(darknessMin).toHaveValue(0);

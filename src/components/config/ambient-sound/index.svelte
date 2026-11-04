@@ -18,6 +18,9 @@
 	export let radius: number;
 	export let walls: boolean;
 	export let darkness: Darkness;
+	// The fade by distance: the volume at the center of the area, and whether it fades out towards the edge.
+	export let volume: number = 0.5;
+	export let easing: boolean = true;
 
 	export let flags: SyrinAmbientSoundFlags;
 	export let create: boolean;
@@ -113,6 +116,31 @@
 					bind:value={radius}
 				/>
 			</div>
+		</div>
+		<div class="form-group">
+			<label for="">{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.volume.label')}</label>
+			<div class="form-fields">
+				<input
+					type="range"
+					data-test="syrin-volume"
+					name="volume"
+					min="0"
+					max="1"
+					step="0.05"
+					bind:value={volume}
+				/>
+				<span class="range-value">{Math.round(volume * 100)}%</span>
+			</div>
+			<p class="hint">
+				{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.volume.hint')}
+			</p>
+		</div>
+		<div class="form-group">
+			<label for="">{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.easing.label')}</label>
+			<input type="checkbox" data-test="syrin-easing" name="easing" bind:checked={easing} />
+			<p class="hint">
+				{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.easing.hint')}
+			</p>
 		</div>
 		<div class="form-group">
 			<label for="">{ctx.game.localizeCore('AMBIENT_SOUND.FIELDS.walls.label')}</label>

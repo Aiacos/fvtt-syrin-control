@@ -8,6 +8,8 @@ export interface AmbientSoundDetails {
 		y: number;
 		radius: number;
 		walls: boolean;
+		volume?: number;
+		easing?: boolean;
 		darkness: {
 			min: number;
 			max: number;
@@ -38,6 +40,8 @@ export async function onAmbientSoundConfig(
 			y: details.data.y,
 			radius: details.data.radius,
 			walls: details.data.walls,
+			volume: details.data.volume ?? 0.5,
+			easing: details.data.easing ?? true,
 			darkness: details.data.darkness,
 			flags: details.data.flags.syrinscape,
 			create: details.data._id == null
