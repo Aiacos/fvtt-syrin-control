@@ -10,9 +10,9 @@ export enum SocketCalls {
 	StopElement = 'stopElement',
 	PlayMood = 'playMood',
 	StopAll = 'stopAll',
-	// The ambient mood playing in the session, sent by the GM to everyone for the local fade
-	AmbientMood = 'ambientMood',
-	GetAmbientMood = 'getAmbientMood'
+	// The mood playing in the session, sent by the GM to everyone for the local fade
+	SessionMood = 'sessionMood',
+	GetSessionMood = 'getSessionMood'
 }
 
 export let socket: SocketlibSocket | undefined = undefined;
@@ -26,12 +26,12 @@ export function setupSocket(ctx: Context): Promise<SocketlibSocket> {
 		const interval = setInterval(() => {
 			let socket = ctx.game.socket;
 			if (socket !== undefined) {
-				ctx.game.socket?.register(SocketCalls.AmbientMood, (moodId) => {
-					ctx.syrin.setActiveAmbientMood(moodId ?? undefined);
+				ctx.game.socket?.register(SocketCalls.SessionMood, (moodId) => {
+					ctx.syrin.setSessionMood(moodId ?? undefined);
 				});
 				if (ctx.game.isGM()) {
-					ctx.game.socket?.register(SocketCalls.GetAmbientMood, () => {
-						return get(ctx.stores.nextAmbientMood) ?? null;
+					ctx.game.socket?.register(SocketCalls.GetSessionMood, () => {
+						return get(ctx.stores.nextMood) ?? null;
 					});
 					ctx.game.socket?.register(SocketCalls.PlayerJoined, (name) => {
 						return ctx.api.playerJoined(name);
@@ -59,7 +59,7 @@ export function setupSocket(ctx: Context): Promise<SocketlibSocket> {
 					});
 					ctx.utils.trace('SocketLib registered | GM');
 				} else {
-					ctx.game.socket?.register(SocketCalls.GetAmbientMood, () => null);
+					ctx.game.socket?.register(SocketCalls.GetSessionMood, () => null);
 					ctx.game.socket?.register(SocketCalls.PlayerJoined, () => {});
 					ctx.game.socket?.register(SocketCalls.PlayAmbient, (_id, _sound) => {});
 					ctx.game.socket?.register(SocketCalls.StopAmbient, (_id, _userId) => {});

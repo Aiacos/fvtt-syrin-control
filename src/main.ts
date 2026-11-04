@@ -56,16 +56,21 @@ Hooks.once('init', function () {
 
 	// The Syrinscape player starts at its own volumes (the local one at the maximum): apply the saved ones.
 	Hooks.on(MODULE + 'playerActive', async () => {
-		// A player connected after the ambient mood started asks the GM which one is playing.
+		// A player connected after the mood started asks the GM which one is playing.
 		if (!ctx.game.isGM()) {
 			const moodId = await ctx.game.socket
-				?.executeAsGM(SocketCalls.GetAmbientMood)
+				?.executeAsGM(SocketCalls.GetSessionMood)
 				.catch(() => undefined);
-			ctx.syrin.setActiveAmbientMood(moodId ?? undefined);
+			ctx.syrin.setSessionMood(moodId ?? undefined);
 		}
 		ctx.syrin.applyVolumes();
 		// The ambient sounds synced before the player was active (e.g. while the audio was locked) were not sent.
 		canvas?.sounds?.refresh();
+	});
+
+	// The pins that make a mood follow the distance are the ones of the scene this client is looking at.
+	Hooks.on('canvasReady', () => {
+		ctx.syrin.fadeLocalVolume();
 	});
 
 	Hooks.on('renderPlaylistDirectory', async (_: any, html: HTMLElement) => {
@@ -172,10 +177,10 @@ Hooks.once('init', function () {
 				ctx.api.stopMood();
 			}
 		});
-		// The local fade of every client follows the ambient mood chosen here.
+		// The local fade of every client follows the mood chosen here (from a pin or a playlist).
 		if (ctx.game.isGM()) {
-			ctx.stores.nextAmbientMood.subscribe((moodId) => {
-				ctx.game.socket?.executeForEveryone(SocketCalls.AmbientMood, moodId ?? null);
+			ctx.stores.nextMood.subscribe((moodId) => {
+				ctx.game.socket?.executeForEveryone(SocketCalls.SessionMood, moodId ?? null);
 			});
 		}
 		await ctx.api.onInit();

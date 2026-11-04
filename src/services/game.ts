@@ -65,6 +65,8 @@ export interface FVTTGame {
 
 	getPlaylists(): Playlists | undefined;
 	getAmbientSounds(): AmbientSoundDocument[] | undefined;
+	/** The moods of the Syrinscape ambient sound pins Foundry can play now on the scene this client is looking at. */
+	getSceneAmbientMoods(): number[];
 
 	getPlayerName(): string;
 	callHookAll(name: string, ...args: any[]): void;
@@ -130,6 +132,16 @@ export class FVTTGameImpl implements FVTTGame {
 
 	getPlaylists(): Playlists | undefined {
 		return this.game.playlists;
+	}
+
+	getSceneAmbientMoods(): number[] {
+		// Only the pins Foundry can play now: a hidden pin, or one outside its darkness activation range, is off.
+		const sounds: any[] = (canvas as any)?.sounds?.placeables ?? [];
+		return sounds
+			.filter((sound) => sound.isAudible)
+			.map((sound) => sound.document?.flags?.syrinscape)
+			.filter((flags) => flags?.type === 'mood')
+			.map((flags) => Number(flags.mood));
 	}
 
 	getAmbientSounds(): AmbientSoundDocument[] | undefined {

@@ -66,12 +66,14 @@ export class Syrin {
 	}
 
 	/**
-	 * The mood of the ambient sounds is one for the whole session (the loudest pin among everyone's tokens), so the
-	 * fade by distance is done with the local volume of each client, by the volume Foundry computes for its tokens.
+	 * The session plays one mood for everyone, so the fade by distance is done with the local volume of each client,
+	 * by the volume Foundry computes for its own tokens. A mood with pins on the scene follows them even when it was
+	 * started from a playlist: it is silent outside their areas and louder towards their centers.
 	 */
-	private activeAmbientMood: number | undefined = undefined;
+	private sessionMood: number | undefined = undefined;
 	private localAmbients = new Map<string, LocalAmbient>();
 	private lastLocalVolume: number | undefined = undefined;
+	private restoreTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
 	/** Sets (or removes) the volume of an ambient sound pin for the tokens of this client. */
 	setLocalAmbient(key: string, ambient: LocalAmbient | undefined) {
@@ -83,33 +85,32 @@ export class Syrin {
 		this.fadeLocalVolume();
 	}
 
-	/** Sets the ambient mood playing in the session (`undefined` when none, e.g. a playlist mood instead). */
-	setActiveAmbientMood(moodId: number | undefined) {
+	/** Sets the mood playing in the session, from a pin or a playlist (`undefined` when none). */
+	setSessionMood(moodId: number | undefined) {
 		clearTimeout(this.restoreTimer);
 		this.restoreTimer = undefined;
 		// Syrinscape fades a stopped mood out: the faded local volume is kept meanwhile, or its tail would jump up.
-		if (moodId === undefined && this.activeAmbientMood !== undefined) {
+		if (moodId === undefined && this.sessionMood !== undefined) {
 			this.restoreTimer = setTimeout(() => {
 				this.restoreTimer = undefined;
-				this.activeAmbientMood = undefined;
+				this.sessionMood = undefined;
 				this.fadeLocalVolume();
 			}, AMBIENT_FADE_OUT_MS);
 			return;
 		}
-		this.activeAmbientMood = moodId;
+		this.sessionMood = moodId;
 		this.fadeLocalVolume();
 	}
-	private restoreTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
-	/** How loud the playing ambient mood is for this client (1 when there is none). */
+	/** How loud the session mood is for this client: 1 unless it has pins on the scene. */
 	ambientFade(): number {
-		const moodId = this.activeAmbientMood;
-		if (moodId === undefined) {
+		const moodId = this.sessionMood;
+		// The pin flags may hold the id as a string
+		if (moodId === undefined || !this.game.getSceneAmbientMoods().includes(Number(moodId))) {
 			return 1;
 		}
 		let fade = 0;
 		for (const ambient of this.localAmbients.values()) {
-			// The pin flags may hold the id as a string
 			if (Number(ambient.moodId) === Number(moodId)) {
 				fade = Math.max(fade, ambient.volume);
 			}
@@ -127,9 +128,9 @@ export class Syrin {
 		return Math.round(toPlayer(percent) * this.ambientFade() * 100) / 100;
 	}
 
-	// Called while tokens move: only a changed volume is sent, and only once the Syrinscape player exists
-	// (`applyVolumes` sends it when it becomes active).
-	private fadeLocalVolume() {
+	// Called while tokens move (and when the scene changes): only a changed volume is sent, and only once the
+	// Syrinscape player exists (`applyVolumes` sends it when it becomes active).
+	fadeLocalVolume() {
 		if (!this.api.isPlayerActive()) {
 			return;
 		}

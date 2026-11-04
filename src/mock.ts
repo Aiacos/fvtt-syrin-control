@@ -83,6 +83,7 @@ export function mockedGame(): FVTTGame {
 		createPlaylistMoodSound: jest.fn(),
 		getPlaylists: jest.fn(),
 		getAmbientSounds: jest.fn(),
+		getSceneAmbientMoods: jest.fn(() => []),
 		getPlayerName: jest.fn(),
 		createDialog: jest.fn()
 	};
