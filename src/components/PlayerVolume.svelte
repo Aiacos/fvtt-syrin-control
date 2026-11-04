@@ -11,7 +11,8 @@
 	// Event handlers - the store and setting are on a 0-100 scale, Syrinscape on 0-1.
 	function onVolumeChange(event: CustomEvent<number>) {
 		volume.set(event.detail);
-		ctx.api.changePlayerVolume(event.detail / 100);
+		// Faded by the ambient sounds around this client's tokens
+		ctx.syrin.applyLocalVolume(event.detail);
 	}
 </script>
 

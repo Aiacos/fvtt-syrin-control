@@ -10,6 +10,7 @@ import {
 	ElementsTabs,
 	SoundsetElementsTab,
 	AmbientSounds,
+	MoodAmbientSound,
 	CurrentlyPlaying
 	// CurrentlyPlaying
 } from '@/models';
@@ -82,20 +83,16 @@ export class Stores {
 		this.nextPlaylistMood = writable(undefined);
 		this.possibleAmbientSounds = delayed({}, 100);
 		this.nextAmbientMood = deduped_readable(
+			// The volume is the one Foundry computes for the closest token (0-1, the closer the louder). Only moods
+			// are played as the ambient: an element pin must not keep the previous mood.
 			derived(this.possibleAmbientSounds, (sounds, set) => {
-				const sortedAmbients = Object.values(sounds).sort((a, b) => a.volume - b.volume);
-				const loudestAmbient = sortedAmbients.shift();
-				if (loudestAmbient !== undefined) {
-					switch (loudestAmbient.kind) {
-						case 'mood': {
-							const moodId = loudestAmbient.moodId;
-							set(moodId);
-							break;
-						}
+				let loudest: MoodAmbientSound | undefined = undefined;
+				for (const sound of Object.values(sounds)) {
+					if (sound.kind === 'mood' && (loudest === undefined || sound.volume > loudest.volume)) {
+						loudest = sound;
 					}
-				} else {
-					set(undefined);
 				}
+				set(loudest?.moodId);
 			})
 		);
 		this.nextMood = deduped_readable(

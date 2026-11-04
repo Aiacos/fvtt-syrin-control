@@ -29,8 +29,7 @@ class SyrinAmbientSound extends AmbientSoundPlaceable {
 		const ctx = populateContext(context);
 
 		const provider = {
-			id: () => this.id,
-			radius: () => this.radius,
+			key: () => (this.document as any)?.path || this.id,
 			ctx: () => ctx
 		};
 

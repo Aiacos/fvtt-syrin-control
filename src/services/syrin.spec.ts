@@ -1,7 +1,7 @@
 import { Mocked, mocked } from '@/mock';
 import { SocketCalls } from '@/socket';
 import { get } from 'svelte/store';
-import { Syrin, SyrinComponent } from './syrin';
+import { AMBIENT_FADE_OUT_MS, Syrin, SyrinComponent } from './syrin';
 
 describe('Syrin service', () => {
 	let mock: Mocked;
@@ -232,6 +232,143 @@ describe('Syrin service', () => {
 			expect(mock.raw.stopElement).toBeCalledTimes(1);
 
 			expect(mock.game.socket?.executeAsGM).not.toBeCalled();
+		});
+	});
+
+	// The ambient mood is one for the whole session (the loudest pin among everyone's tokens), but each client fades
+	// it with its own local volume, by how close its own tokens are, like Foundry does with ambient sounds.
+	describe('ambient fade', () => {
+		beforeEach(() => {
+			mock.game.getSetting = jest.fn((name: string) => (name === 'playerVolume' ? 80 : 50)) as any;
+			mock.ctx.stores.playerVolume.refresh();
+			mock.raw.getState = jest.fn(() => 'active');
+		});
+		const lastLocalVolume = () => {
+			const calls = (mock.raw.changePlayerVolume as jest.Mock).mock.calls;
+			return calls[calls.length - 1]?.[0];
+		};
+
+		it('keeps the full local volume when no ambient mood is playing', () => {
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.3 });
+
+			expect(lastLocalVolume()).toBeCloseTo(0.8);
+		});
+
+		it('fades the ambient mood by the volume Foundry computes for the closest pin of that mood', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.3 });
+			expect(lastLocalVolume()).toBeCloseTo(0.24);
+
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.9 });
+			expect(lastLocalVolume()).toBeCloseTo(0.72);
+		});
+
+		it('ignores pins of other moods', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.25 });
+			syrin.setLocalAmbient('syrinscape:b.wav', { moodId: 2, volume: 1 });
+
+			expect(lastLocalVolume()).toBeCloseTo(0.2);
+		});
+
+		it('silences the ambient mood when no token of this client is in its area', () => {
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', undefined);
+
+			expect(lastLocalVolume()).toBe(0);
+		});
+
+		// Syrinscape fades the stopped mood out (in a second): at the full volume its tail would jump up.
+		it('restores the full local volume once the stopped ambient mood faded out', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+			syrin.setActiveAmbientMood(undefined);
+
+			expect(lastLocalVolume()).toBeCloseTo(0.4);
+			jest.advanceTimersByTime(AMBIENT_FADE_OUT_MS);
+			expect(lastLocalVolume()).toBeCloseTo(0.8);
+		});
+
+		it('keeps fading when another ambient mood starts before the restore', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+			syrin.setLocalAmbient('syrinscape:b.wav', { moodId: 2, volume: 0.25 });
+			syrin.setActiveAmbientMood(undefined);
+			syrin.setActiveAmbientMood(2);
+			jest.advanceTimersByTime(AMBIENT_FADE_OUT_MS);
+
+			expect(lastLocalVolume()).toBeCloseTo(0.2);
+		});
+
+		it('does not send the same local volume twice', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+			(mock.raw.changePlayerVolume as jest.Mock).mockClear();
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.501 });
+
+			expect(mock.raw.changePlayerVolume).not.toBeCalled();
+		});
+
+		it('waits for the Syrinscape player before changing the local volume', () => {
+			mock.raw.getState = jest.fn(() => 'inactive');
+
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+
+			expect(mock.raw.changePlayerVolume).not.toBeCalled();
+		});
+
+		it('applies the faded volume when the player becomes active', () => {
+			mock.raw.getState = jest.fn(() => 'inactive');
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+
+			syrin.applyVolumes();
+
+			expect(lastLocalVolume()).toBeCloseTo(0.4);
+		});
+
+		it('fades a volume dragged on the slider too', () => {
+			syrin.setActiveAmbientMood(1);
+			syrin.setLocalAmbient('syrinscape:a.wav', { moodId: 1, volume: 0.5 });
+
+			syrin.applyLocalVolume(40);
+
+			expect(lastLocalVolume()).toBeCloseTo(0.2);
+		});
+	});
+
+	describe('ambient mood choice', () => {
+		const nextAmbientMood = () => get(mock.ctx.stores.nextAmbientMood);
+		beforeEach(() => {
+			mock.game.isGM = jest.fn(() => true);
+		});
+
+		it('plays the loudest ambient mood', () => {
+			syrin.playAmbientSound('a', { kind: 'mood', volume: 0.2, moodId: 1, userId: 'u' });
+			syrin.playAmbientSound('b', { kind: 'mood', volume: 0.7, moodId: 2, userId: 'u' });
+			jest.runOnlyPendingTimers();
+
+			expect(nextAmbientMood()).toBe(2);
+		});
+
+		it('is not stuck on the previous mood when the loudest pin is an element', () => {
+			syrin.playAmbientSound('a', { kind: 'mood', volume: 0.2, moodId: 1, userId: 'u' });
+			jest.runOnlyPendingTimers();
+			syrin.stopAmbientSound('a', 'u');
+			syrin.playAmbientSound('b', { kind: 'element', volume: 1, elementId: 9, userId: 'u' });
+			jest.runOnlyPendingTimers();
+
+			expect(nextAmbientMood()).toBeUndefined();
+		});
+
+		it('picks a mood below a louder element', () => {
+			syrin.playAmbientSound('a', { kind: 'mood', volume: 0.2, moodId: 1, userId: 'u' });
+			syrin.playAmbientSound('b', { kind: 'element', volume: 1, elementId: 9, userId: 'u' });
+			jest.runOnlyPendingTimers();
+
+			expect(nextAmbientMood()).toBe(1);
 		});
 	});
 

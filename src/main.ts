@@ -13,7 +13,7 @@ import { resolve } from './services/context';
 import { FVTTGameImpl } from './services/game';
 import { RawApiImpl } from './services/raw';
 import { createProxies } from './proxies';
-import { setupSocket } from './socket';
+import { setupSocket, SocketCalls } from './socket';
 import { onPlaylistConfig } from './ui/playlistConfig';
 import { onAmbientSoundConfig } from './ui/ambientSoundConfig';
 import { onPlaylistSoundConfig } from './ui/playlistSoundConfig';
@@ -25,9 +25,8 @@ Hooks.once('init', function () {
 	container.register('FVTTGame', {
 		useClass: FVTTGameImpl
 	});
-	container.register('RawApi', {
-		useClass: RawApiImpl
-	});
+	// One Syrinscape player for everyone: its state (e.g. active) must be shared by every service using it.
+	container.registerSingleton('RawApi', RawApiImpl);
 	const ctx = resolve();
 	initSettings(ctx);
 	const proxies = createProxies(ctx);
@@ -56,8 +55,17 @@ Hooks.once('init', function () {
 	}
 
 	// The Syrinscape player starts at its own volumes (the local one at the maximum): apply the saved ones.
-	Hooks.on(MODULE + 'playerActive', () => {
+	Hooks.on(MODULE + 'playerActive', async () => {
+		// A player connected after the ambient mood started asks the GM which one is playing.
+		if (!ctx.game.isGM()) {
+			const moodId = await ctx.game.socket
+				?.executeAsGM(SocketCalls.GetAmbientMood)
+				.catch(() => undefined);
+			ctx.syrin.setActiveAmbientMood(moodId ?? undefined);
+		}
 		ctx.syrin.applyVolumes();
+		// The ambient sounds synced before the player was active (e.g. while the audio was locked) were not sent.
+		canvas?.sounds?.refresh();
 	});
 
 	Hooks.on('renderPlaylistDirectory', async (_: any, html: HTMLElement) => {
@@ -164,6 +172,12 @@ Hooks.once('init', function () {
 				ctx.api.stopMood();
 			}
 		});
+		// The local fade of every client follows the ambient mood chosen here.
+		if (ctx.game.isGM()) {
+			ctx.stores.nextAmbientMood.subscribe((moodId) => {
+				ctx.game.socket?.executeForEveryone(SocketCalls.AmbientMood, moodId ?? null);
+			});
+		}
 		await ctx.api.onInit();
 		if (!ctx.game.isGM()) {
 			ctx.utils.info('Ready but not a GM...');
